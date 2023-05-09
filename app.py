@@ -47,10 +47,33 @@ def index():
 def about():
     return render_template('about.html')
 
+#!Makeleler
+@app.route('/articles')
+def articles():
+    cursor = mysql.connection.cursor()
+    sorgu = "Select * from articles"
+    result = cursor.execute(sorgu)
+    
+    if result > 0:
+        articles = cursor.fetchall()
+        return render_template('articles.html',articles = articles)
+    else:
+        return render_template('articles.html')
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    cursor = mysql.connection.cursor()
+    
+    sorgu = "Select * from articles where author=%s"
+    
+    result = cursor.execute(sorgu,(session['username'],))
+    
+    if result > 0:
+        articles = cursor.fetchall()
+        return render_template('dashboard.html',articles=articles)
+    else:
+        return render_template('dashboard.html')
 
 #! REGISTER TAB-------------------------------------------------
 @app.route('/register',methods=['GET','POST'])
@@ -76,6 +99,21 @@ def register():
         return redirect(url_for("login"))
     else:
         return render_template("register.html",form=form)
+    
+#! Detay Sayfası
+@app.route("/article/<string:id>")
+def article(id):
+    cursor = mysql.connection.cursor()
+    
+    sorgu = "select * from articles where id = %s"
+    
+    result = cursor.execute(sorgu,(id,))
+    
+    if result > 0:
+        article = cursor.fetchone()
+        return render_template("article.html",article=article)
+    else:
+        return render_template("article.html")
 
 #!Login Page
 @app.route("/login", methods=["GET", "POST"])
@@ -118,7 +156,32 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("index"))
-
+#! Makele Ekleme
+@app.route('/addarticle', methods=['GET', 'POST'])
+def addarticle():
+    form = ArticleForm(request.form)
+    if request.method == 'POST' and form.validate():
+        title = form.title.data
+        content = form.content.data
+        
+        cursor = mysql.connection.cursor()
+        
+        sorgu = "Insert into articles (title, author, content) VALUES (%s, %s, %s)"
+        
+        cursor.execute(sorgu,(title, session["username"], content))
+        
+        mysql.connection.commit()
+        
+        cursor.close()
+        
+        flash("Makele Başarı bir şekilde eklendi...", "success")
+        
+        return redirect(url_for("dashboard"))
+    return render_template('addarticle.html',form=form)
+#! Makele Form
+class ArticleForm(Form):
+    title = StringField("Makele başlığı",validators=[validators.Length(min=5,max=100)])
+    content = TextAreaField("Makele İçeriği",validators=[validators.Length(min=10)])
 if __name__ == '__main__':
     app.run(debug=True)
 
