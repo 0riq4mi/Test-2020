@@ -178,6 +178,25 @@ def addarticle():
         
         return redirect(url_for("dashboard"))
     return render_template('addarticle.html',form=form)
+
+#!Makale Silme
+@app.route('/delete/<string:id>')
+@login_required
+def delete(id):
+    cursor = mysql.connection.cursor()
+    sorgu = "Select * from articles where author = %s and id = %s"
+    result = cursor.execute(sorgu,(session["username"],id))
+    
+    if result > 0:
+        sorgu2 = "Delete from articles where id = %s"
+        cursor.execute(sorgu2,(id,))
+        mysql.connection.commit()
+        return redirect(url_for("dashboard"))
+    else:
+        flash("Böyle bir makele yok veya bu işleme yetkiniz yok","danger")
+        return redirect(url_for("index"))
+
+
 #! Makele Form
 class ArticleForm(Form):
     title = StringField("Makele başlığı",validators=[validators.Length(min=5,max=100)])
