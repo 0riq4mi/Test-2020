@@ -216,8 +216,21 @@ def update(id):
             form.content.data = article["content"]
             return render_template("update.html",form=form)
     else:
-        pass
+        #!POST REQUEST
+        form = ArticleForm(request.form)
+        
+        newTitle = form.title.data
+        newContent = form.content.data
+        
+        sorgu2 = "Update articles set title=%s, content=%s where id=%s"
 
+        cursor = mysql.connection.cursor()
+        cursor.execute(sorgu2,(newTitle,newContent,id))
+        mysql.connection.commit()
+        flash("Başarılı bir şekilde güncellendi...","success")
+        
+        return redirect(url_for("dashboard"))
+        
 #! Makele Form
 class ArticleForm(Form):
     title = StringField("Makele başlığı",validators=[validators.Length(min=5,max=100)])
